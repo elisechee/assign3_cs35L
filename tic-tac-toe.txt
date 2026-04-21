@@ -1,0 +1,6 @@
+installs:
+- installed ubuntu, installed node, installed python3 running wsl
+
+- first implementing the board, the board is composed of buttons that hold no value and a event handler for clicks that sets the value to X
+
+built out standard tic tac toe game - added checks to make sure that the player can only input one by one and that it properly checks if there is a winner
