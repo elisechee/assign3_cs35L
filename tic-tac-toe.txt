@@ -1,6 +1,70 @@
 installs:
 - installed ubuntu, installed node, installed python3 running wsl
 
-- first implementing the board, the board is composed of buttons that hold no value and a event handler for clicks that sets the value to X
+First, the board is composed of buttons that hold no value and a event handler for clicks that sets the value to X
 
-built out standard tic tac toe game - added checks to make sure that the player can only input one by one and that it properly checks if there is a winner
+The Square component is intentionally stateless -owns no data. It's value (X or O or null) is passed from the parent Board component. Makes this feature small and simple.
+
+    function Square({ value, onSquareClick }) {
+    return (
+        <button className="square" onClick={onSquareClick}>
+        {value}
+        </button>
+    );
+    }
+
+The board holds all the variables and core logic for the game. It keeps track of an array sqares that holds the value fo all the squares, and updates using React's useState. Also other variables crucial to the tic tac toe play such as xisNext which helps keep track of which player's turn it is. 
+
+    export default function Board() {
+        const [xisNext, setXIsNext] = useState(true);
+        const [squares, setSquares] = useState(Array(9).fill(null));
+        ...
+    }
+
+Then I put in the event handler. handleclick which returns if the square is already filled (not valid move). Otherwise, if it is valid, it uses slice() to create an immutable copy of swuares and if its X's turn, sets the copy's i index square to X, else sets to O. Then using the setSquares (initialized with React's state), sets the squares to the modified copy and then negates xisNext so that it moves to the other player's turn.
+
+    function handleClick(i) {
+        if (squares[i]) {
+        return;
+        }
+
+        const nextSquares = squares.slice();
+        if (xisNext) {
+        nextSquares[i] = "X";
+        setNumMovesX(numMovesX + 1);
+        } else {
+        nextSquares[i] = "O";
+        setNumMovesO(numMovesO + 1);
+        }
+        setSquares(nextSquares);
+        setXIsNext(!xisNext);
+    }
+
+Then wrote a helper function outside board component to calculate if there is a winner. The function does this by checking all 8 winning lines after every move through the array "lines" and then a for loop that checks that for every piece that fulfills the winning line, they are each of the same type, which if true, means there is a winner. 
+
+    function calculateWinner(squares) {
+    // make an array of all the winning combinations
+        const lines = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // winning rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+            [0, 4, 8], [2, 4, 6]            // diagonals
+        ];
+
+        // loop through the winning combinations, to see if any of them have been achieved
+        for (let i = 0; i < lines.length; i++) {
+            const [a, b, c] = lines[i];
+            if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+            return squares[a]; //this for loop checks to see if the squares at the winning combination are all the same, and not null. If they are, it returns the value of that square, which is either "X" or "O"
+            }
+        }
+        return null;
+    }
+
+And then finally, an overall status that updates the game, on which player is next and if there is a winner. 
+
+    let status;
+    if (winner) {
+        status = "Winner: " + winner;
+    } else {
+        status = "Next player: " + (xisNext ? "X" : "O");
+    }

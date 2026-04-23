@@ -155,6 +155,38 @@ class TestChorusLapilli(unittest.TestCase):
         tiles[0].click()
         self.assertTileIs(tiles[0], self.SYMBOL_X)
 
+    def test_cannot_overwrite_tile(self):
+        '''Clicking an occupied tile does not change it.'''
+        tiles = self.driver.find_elements(By.XPATH, self.BOARD_TILE_XPATH)
+        tiles[0].click()  # X plays tile 0
+        tiles[0].click()  # O tries to overwrite — should be ignored
+        self.assertTileIs(tiles[0], self.SYMBOL_X)
+        # tile 0 should still be X, and O's turn should not have been consumed
+        tiles[1].click()  # should still be O's turn
+        self.assertTileIs(tiles[1], self.SYMBOL_O)
+
+    def test_moving_phase_moves_piece(self):
+        '''After 3 pieces each, clicking a piece then a destination moves it.'''
+        tiles = self.driver.find_elements(By.XPATH, self.BOARD_TILE_XPATH)
+        # Place 3 each: X at 0,1,3  O at 4,5,6
+        for idx in [0, 4, 1, 5, 3, 6]:
+            tiles[idx].click()
+        # Now in moving phase — move X's piece from 0 to 2 (valid neighbor? no, 0→2 skips a col)
+        # Move X from index 3 to index 2 (valid: same row, adjacent col)
+        tiles[3].click()  # select X at 3
+        tiles[2].click()  # move to 2
+        self.assertTileIs(tiles[3], self.SYMBOL_BLANK)
+        self.assertTileIs(tiles[2], self.SYMBOL_X)
+
+    def test_x_wins(self):
+        '''X wins when it gets three in a row.'''
+        tiles = self.driver.find_elements(By.XPATH, self.BOARD_TILE_XPATH)
+        # X: 0, 1, 2  O: 3, 4 — X wins on move 5
+        for idx in [0, 3, 1, 4, 2]:
+            tiles[idx].click()
+        # After this, no more moves should register
+        tiles[5].click()  # O tries to play — should be ignored
+        self.assertTileIs(tiles[5], self.SYMBOL_BLANK)
 
 # ================= [DO NOT MAKE ANY CHANGES BELOW THIS LINE] =================
 

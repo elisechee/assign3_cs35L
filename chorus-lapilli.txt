@@ -1,0 +1,90 @@
+The main difference here from the tic tac toe implementation is that Chorus Lapilli has a "moving phase" that occurs after each player has reached 3 moves where they can no longer place new pieces, and must instead move an existing piece to an adjacent sqaure each subsequent turn. And additionally, theres a rule that forces a player who occupies the center square to either win or vacate it. 
+
+I introduced new state variables that counted how many pieces each player had placed and a boolean variable that becomes true when the Chorus Lapilli phase of the game starts. 
+
+    const [numMovesX, setNumMovesX] = useState(0);
+    const [numMovesO, setNumMovesO] = useState(0);
+
+    const isMovingPhase = numMovesX >= 3 && numMovesO >= 3; // both players done placing
+
+Then to account for the two-click move system, I created a new fucntion separate from the tic tac toe one to account for this called post3Moves. This function handles both clicks with a branching structure. First click vs second click which was kept track of through a boolean variable "isFirstClick". 
+
+
+    const [isValidMove, setIsValidMove] = useState(true);
+    const [isFirstClick, setIsFirstClick] = useState(true);
+    
+    function post3Moves(i) {
+        if (isFirstClick) {
+            if (squares[i] !== (xisNext ? "X" : "O") || squares[i] === null) {
+                console.log("Invalid piece selected");
+                return;
+            }
+            setPieceToMove(i);
+            setIsFirstClick(false);
+            console.log(`Selected piece at index ${i}`);
+            return;
+        } else {
+            ... // checks if valid move and applies or rejects the move
+        }
+    }
+ 
+
+The way to check if the second click is a valid move or not while accounting for edge, corner, and center piece moves. The it was done is using nested for loops to basically traverses the board as a flat array and then only include the ones that are within the board. and we traverse with indices that have row by dividing pieceToMove/3 and col with mod 3 for pieceToMove. This gives corner pieces 3 valid neighbors, edge pieces 5, and center piece 8.
+
+    const validMoves = [];
+      const row = Math.floor(pieceToMove / 3);
+      const col = pieceToMove % 3;
+      
+      for (let r = row - 1; r <= row + 1; r++) {
+        for (let c = col - 1; c <= col + 1; c++) {
+          if (r >= 0 && r < 3 && c >= 0 && c < 3) {
+            validMoves.push(r * 3 + c);
+          }
+        }
+      }
+
+On case of it being an invalid move then it gets rejected, and a timed state flag provides feadback, and resets the move variables isValidMove and isFirstClick and sets isValidMove to false. 
+
+    if (validMoves.includes(i) && squares[i] === null && squares[pieceToMove] === (xisNext ? "X" : "O") && i !== pieceToMove) {
+        const nextSquares = squares.slice();
+        nextSquares[i] = squares[pieceToMove];
+        nextSquares[pieceToMove] = null;
+        setSquares(nextSquares);
+        setXIsNext(!xisNext);
+        setPieceToMove(null);
+        setIsFirstClick(true);
+      } else {
+        setIsValidMove(false);
+        setTimeout(() => {
+          console.log("Invalid move! Try again.");
+          setIsValidMove(true);
+          setIsFirstClick(true);
+        }, 1000);
+      }
+
+And also to account for the center square rule, an additional check has been implemented that blocks the player's move if they occupy the center suqare (kept track through var playerOwnsCenter) and if they are moving a non-center square, and there is no winning move (calculateWinner(nextSquares) === null). 
+
+    const playerOwnsCenter = squares[4] === (xisNext ? "X" : "O");
+    ...
+
+    if (playerOwnsCenter && pieceToMove !== 4 && calculateWinner(nextSquares) === null) {
+        setIsValidMove(false);
+        setTimeout(() => {
+        setIsValidMove(true);
+        setIsFirstClick(true);
+        }, 1000);
+        setPieceToMove(null);
+        return;
+    }
+
+And also changed the overall handleClick function to detect which function to use based on whether its just regular tic tac toe, or the chorus lapilli phase (aka isMovingPhase)
+
+    function handleClick(i) {
+    if (winner) return;
+
+    if (!isMovingPhase) {
+      first3Moves(i);
+    } else {
+      post3Moves(i);
+    }
+  }
